@@ -30,10 +30,15 @@ class ActivityDatabase:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(self.path, timeout=10)
-        self.connection.row_factory = sqlite3.Row
-        self.connection.execute("PRAGMA journal_mode = WAL")
-        self.connection.execute("PRAGMA synchronous = NORMAL")
-        self._create_schema()
+        try:
+            self.connection.row_factory = sqlite3.Row
+            self.connection.execute("PRAGMA journal_mode = WAL")
+            self.connection.execute("PRAGMA synchronous = NORMAL")
+            self._create_schema()
+        except BaseException:
+            # __exit__ is not called when construction fails.
+            self.connection.close()
+            raise
 
     def _create_schema(self) -> None:
         self.connection.executescript(
