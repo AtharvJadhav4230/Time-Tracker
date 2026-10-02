@@ -59,10 +59,14 @@ New-Item `
     -Path (Join-Path $portableStagingDirectory "portable.mode") `
     -Force | Out-Null
 
-Copy-Item `
-    -LiteralPath (Join-Path $projectDirectory "packaging\PORTABLE_NOTICE.txt") `
-    -Destination $portableStagingDirectory `
-    -Force
+$portableNoticeTemplate = Join-Path $projectDirectory "packaging\PORTABLE_NOTICE.txt"
+$portableNotice = Get-Content -LiteralPath $portableNoticeTemplate -Raw
+$portableNotice = $portableNotice.Replace("{{VERSION}}", $version)
+
+Set-Content `
+    -LiteralPath (Join-Path $portableStagingDirectory "PORTABLE_NOTICE.txt") `
+    -Value $portableNotice `
+    -Encoding utf8
 
 Copy-Item `
     -LiteralPath (Join-Path $projectDirectory "config.example.json") `
@@ -71,6 +75,21 @@ Copy-Item `
 
 Copy-Item `
     -LiteralPath (Join-Path $projectDirectory "LICENSE") `
+    -Destination $portableStagingDirectory `
+    -Force
+
+Copy-Item `
+    -LiteralPath (Join-Path $projectDirectory "PRIVACY.md") `
+    -Destination $portableStagingDirectory `
+    -Force
+
+Copy-Item `
+    -LiteralPath (Join-Path $projectDirectory "CHANGELOG.md") `
+    -Destination $portableStagingDirectory `
+    -Force
+
+Copy-Item `
+    -LiteralPath (Join-Path $projectDirectory "LEGAL.md") `
     -Destination $portableStagingDirectory `
     -Force
 
