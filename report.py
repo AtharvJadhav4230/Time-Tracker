@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import sqlite3
 from datetime import date
 from pathlib import Path
 
@@ -64,7 +65,7 @@ def main() -> int:
             end_day=end_day,
             categorizer=categorizer,
         )
-    except (CategoryConfigError, OSError) as exc:
+    except (CategoryConfigError, OSError, sqlite3.Error) as exc:
         parser.exit(1, f"Error: {exc}\n")
 
     print(f"Report generated: {result}")
