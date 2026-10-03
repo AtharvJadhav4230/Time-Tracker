@@ -1017,7 +1017,7 @@ class TimeTrackerApp:
                 return
         try:
             copy_activity_database(DATABASE_PATH, destination_path)
-        except (OSError, sqlite3.Error):
+        except (OSError, sqlite3.Error, ValueError):
             messagebox.showerror(
                 "Unable to back up",
                 "The activity database could not be copied. No backup file was kept.",

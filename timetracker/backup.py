@@ -39,8 +39,9 @@ def backup_activity_database(source: str | Path, destination: str | Path) -> Pat
     )
     os.close(descriptor)
     temporary_path = Path(temporary_name)
-    source_connection = sqlite3.connect(source_path)
+    source_connection: sqlite3.Connection | None = None
     try:
+        source_connection = sqlite3.connect(source_path)
         destination_connection = sqlite3.connect(temporary_path)
         try:
             source_connection.backup(destination_connection)
@@ -51,5 +52,6 @@ def backup_activity_database(source: str | Path, destination: str | Path) -> Pat
         temporary_path.unlink(missing_ok=True)
         raise
     finally:
-        source_connection.close()
+        if source_connection is not None:
+            source_connection.close()
     return destination_path

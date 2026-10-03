@@ -78,7 +78,26 @@ class BackupTests(unittest.TestCase):
 
             self.assertEqual(self._rows(destination, start), ["Fictional"])
             self.assertEqual(sibling.read_text(encoding="utf-8"), "keep this sibling")
-            self.assertEqual(list(root.glob("backup.db*.tmp")), [])
+            self.assertEqual(list(root.glob(".backup.db.*.tmp")), [])
+
+    def test_source_connection_failure_removes_only_its_temporary_file(self) -> None:
+        start = datetime(2026, 1, 15, 9, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "activity.db"
+            destination = root / "backup.db"
+            with ActivityDatabase(source) as database:
+                database.create_period(ActivityState("Code.exe", "Fictional"), start)
+            destination.write_bytes(b"previous backup")
+            with mock.patch(
+                "timetracker.backup.sqlite3.connect",
+                side_effect=sqlite3.OperationalError("source cannot be opened"),
+            ):
+                with self.assertRaises(sqlite3.OperationalError):
+                    backup_activity_database(source, destination)
+            self.assertEqual(destination.read_bytes(), b"previous backup")
+            self.assertEqual(list(root.glob(".backup.db.*.tmp")), [])
+            self.assertEqual(self._rows(source, start), ["Fictional"])
 
 
 if __name__ == "__main__":
