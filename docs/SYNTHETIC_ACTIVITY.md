@@ -10,7 +10,10 @@ python scripts/generate_demo_data.py --output C:\demo-time-tracker
 ```
 
 The command creates `C:\demo-time-tracker\activity.db`. Running it again with
-the same directory fails instead of replacing that file.
+the same directory fails instead of replacing that file. If the destination is
+unwritable, its parent path is a file, or SQLite encounters an error, the
+command prints a concise error message to standard error without a traceback
+and exits with status code 1.
 
 Every generated database contains the same fictional rows, fixed to
 16–17 September 2026 (UTC):
