@@ -139,7 +139,10 @@ continuously reading or interacting with the content.
 
 ## Desktop interface
 
-The application provides three views.
+The application provides three views. Ctrl+Tab and Ctrl+Shift+Tab move between
+them. Alt+D opens Dashboard, Alt+U opens Usage analysis, and Alt+R opens
+Reports and data. Tab and Shift+Tab still move through the controls on the
+current view. Reset has no keyboard mnemonic.
 
 ### Dashboard
 
@@ -149,14 +152,23 @@ The application provides three views.
 - active time, idle time, application count, and period count for today;
 - recent activity timeline with exact durations and states.
 
+Sample interval and idle threshold are remembered in `preferences.json` in the
+application data directory. Missing or invalid values fall back to one second
+and three minutes. If the preference file cannot be saved, tracking still runs.
+
 ### Usage analysis
 
-- Today and Last 7 days views;
+- Today, Last 7 days, and Previous 7 days views;
 - total active screen time and daily average;
 - longest continuous active session;
 - hourly or daily stacked usage chart;
 - most-used categories and applications;
 - most-used browser tabs.
+
+Previous 7 days is the seven complete local calendar days immediately before
+Last 7 days. If today is 29 September, Last 7 days covers 23–29 September and
+Previous 7 days covers 16–22 September. Choosing a period only changes the
+analysis view; it does not start, stop, or modify tracking.
 
 Browser titles such as `Gmail - Google Chrome` are normalized to `Gmail`, so
 separate visits to the same tab are added together.
@@ -165,7 +177,20 @@ separate visits to the same tab are added together.
 
 - generate an offline HTML report for a selected date;
 - open the local reports folder;
+- export recorded activity as CSV or JSON;
+- back up the activity database to a file you choose;
 - reset all recorded activity from the interface.
+
+**Back up activity database** uses a SQLite snapshot, so recent committed
+activity is included while tracking continues. The copy can contain sensitive
+window titles. It does not include HTML reports or `config.json`. An existing
+destination is replaced only after you confirm. A failed backup does not leave
+a partial file in place of a successful one.
+
+CSV and JSON exports contain `application`, `window_title`, `started_at`,
+`ended_at`, `duration_seconds`, and `is_idle`. Timestamps include a timezone
+offset. Titles in the export can be sensitive, and the export is written only
+to the file you choose.
 
 Reset deletes periods from the SQLite database. Previously generated HTML
 reports are intentionally kept. The official uninstaller removes the local app
@@ -183,6 +208,35 @@ Installed application data is stored under:
 
 When run directly from the repository, the equivalent folders are inside the
 project directory.
+
+### Portable Windows build
+
+Releases that include a portable build provide a ZIP named
+`LocalTimeTracker-<version>-portable-x64.zip`.
+
+To use the portable build, download the ZIP from the latest release, extract
+it to a folder, and run `LocalTimeTracker.exe`.
+
+Portable mode keeps application data inside the extracted folder:
+
+<portable-folder>\
+├── data\activity.db
+├── reports\
+├── LocalTimeTracker.exe
+├── portable.mode
+└── ...
+
+The portable build does not use `%LOCALAPPDATA%\LocalTimeTracker` for its
+application data and does not create a Windows uninstall entry.
+
+To back up a portable installation, copy the entire extracted folder,
+including the `data` and `reports` directories. When moving to a newer
+portable release, preserve the existing `data` directory if you want to keep
+your recorded activity.
+
+WARNING: Do not run the installed version and the portable version at the same
+time. Both versions can record activity simultaneously and may produce
+overlapping tracking data.
 
 Window and browser-tab titles can contain sensitive information such as
 document names, searches, email subjects, account names, or private website
