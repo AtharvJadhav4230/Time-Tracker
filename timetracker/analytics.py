@@ -146,7 +146,13 @@ def _category_ranking(
         (name, color, seconds)
         for (name, color), seconds in sorted(
             totals.items(),
-            key=lambda item: (-item[1], item[0][0].casefold(), item[0][1].casefold()),
+            key=lambda item: (
+                -item[1],
+                item[0][0].casefold(),
+                item[0][0],
+                item[0][1].casefold(),
+                item[0][1],
+            ),
         )
     )
 
@@ -155,7 +161,7 @@ def _application_ranking(totals: dict[str, float]) -> tuple[tuple[str, float], .
     """Order applications by descending duration, then name."""
 
     return tuple(
-        sorted(totals.items(), key=lambda item: (-item[1], item[0].casefold()))
+        sorted(totals.items(), key=lambda item: (-item[1], item[0].casefold(), item[0]))
     )
 
 
@@ -171,7 +177,9 @@ def _browser_tab_ranking(
             key=lambda item: (
                 -item[1],
                 item[0][0].casefold(),
+                item[0][0],
                 item[0][1].casefold(),
+                item[0][1],
             ),
         )
     )

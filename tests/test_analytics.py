@@ -182,6 +182,33 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(occupied.categories, reverse_occupied.categories)
         self.assertEqual(forward.active_seconds, reverse.active_seconds)
 
+    def test_case_equivalent_names_keep_a_stable_original_order(self) -> None:
+        start = datetime(2026, 7, 20, 9, 0).astimezone()
+        tied = [
+            self._period(start, 10, "code.exe", "Editor", "work", "#aabbcc"),
+            self._period(start, 10, "Code.exe", "Editor", "Work", "#AABBCC"),
+            self._period(start, 10, "chrome.exe", "inbox - Google Chrome", "Mail", "#111111"),
+            self._period(start, 10, "chrome.exe", "Inbox - Google Chrome", "Mail", "#111111"),
+        ]
+        day = start.date()
+        forward = analyze_usage(tied, day, day)
+        reverse = analyze_usage(list(reversed(tied)), day, day)
+        self.assertEqual(
+            [name for name, _seconds in forward.applications],
+            ["chrome.exe", "Code.exe", "code.exe"],
+        )
+        self.assertEqual(
+            [(name, color) for name, color, _seconds in forward.categories],
+            [("Mail", "#111111"), ("Work", "#AABBCC"), ("work", "#aabbcc")],
+        )
+        self.assertEqual(
+            [(application, title) for application, title, _seconds in forward.browser_tabs],
+            [("chrome.exe", "Inbox"), ("chrome.exe", "inbox")],
+        )
+        self.assertEqual(forward.applications, reverse.applications)
+        self.assertEqual(forward.categories, reverse.categories)
+        self.assertEqual(forward.browser_tabs, reverse.browser_tabs)
+
 
 if __name__ == "__main__":
     unittest.main()
