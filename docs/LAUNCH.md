@@ -3,6 +3,131 @@
 This document contains the English positioning, repository metadata, launch
 copy, and rollout checklist for Local Time Tracker.
 
+
+## v1.2.0: Windows testers and Python contributors wanted
+
+Local Time Tracker v1.2.0 is available for 64-bit Windows 10 and 11. The desktop
+app keeps application and browser-title activity in a local SQLite database and
+generates offline HTML reports.
+
+The release integrates 19 PRs from @Ymax27. Automated tests pass on Windows with
+Python 3.11 and 3.13 and on Ubuntu with Python 3.12. The application itself runs
+on Windows; the Ubuntu job validates core behavior.
+
+- [Download v1.2.0 and its checksum](https://github.com/HafidIdrissi/Time-Tracker/releases/tag/v1.2.0).
+- [Add CLI version flags: #86](https://github.com/HafidIdrissi/Time-Tracker/issues/86).
+- [Improve synthetic-data errors: #87](https://github.com/HafidIdrissi/Time-Tracker/issues/87).
+- [Test upcoming Windows changes: #88](https://github.com/HafidIdrissi/Time-Tracker/issues/88).
+
+For a code contribution, choose one open, unassigned issue, comment with a short
+plan, and wait for the maintainer to confirm the scope. For Windows testing,
+choose one area in #88 and report the exact PR commit, environment, steps and
+result. The pending PR features are not part of the v1.2.0 installer.
+
+### Python community post
+
+**Title:** Python contributors wanted: two focused tasks in an offline Windows time tracker
+
+**Body:**
+
+I maintain Local Time Tracker, an MIT-licensed Python app that automatically
+tracks time spent in Windows applications and browser tabs. Activity stays in a
+local SQLite database, and reports work offline. There is no account, cloud
+service or telemetry.
+
+v1.2.0 is out, and I am looking for contributors to help with two focused tasks:
+
+- Add `--version` to the report and category-preview CLIs:
+  https://github.com/HafidIdrissi/Time-Tracker/issues/86
+- Return clear errors when the fictional-data generator cannot write:
+  https://github.com/HafidIdrissi/Time-Tracker/issues/87
+
+Both issues include acceptance criteria and suggested tests. Please choose one
+issue, comment with a short plan, and wait for scope confirmation before coding.
+
+Setup and contribution guide:
+https://github.com/HafidIdrissi/Time-Tracker/blob/main/CONTRIBUTING.md
+
+Source and screenshots: https://github.com/HafidIdrissi/Time-Tracker
+
+### Windows community post
+
+**Title:** Windows testers wanted for a local, open-source activity tracker
+
+**Body:**
+
+I maintain Local Time Tracker, a free Windows 10/11 app that shows time spent in
+applications and browser tabs, idle time and offline reports. Activity stays on
+your computer; there is no account or telemetry.
+
+The v1.2.0 installer and SHA-256 checksum are available here:
+https://github.com/HafidIdrissi/Time-Tracker/releases/tag/v1.2.0
+
+I am also looking for volunteers to check upcoming desktop improvements on real
+Windows machines, including exports, backup error handling, keyboard navigation
+and analysis refresh. These are pending PRs, not features in the published
+installer. Pick one area and follow its test instructions:
+https://github.com/HafidIdrissi/Time-Tracker/issues/88
+
+A useful report includes the Windows/Python versions, exact PR commit, steps,
+expected behavior and actual result. Use a disposable checkout and fictional
+data; do not upload personal activity databases, reports or private window titles.
+
+First-run guide:
+https://github.com/HafidIdrissi/Time-Tracker/blob/main/docs/FIRST_RUN.md
+
+### Short Discord or forum message
+
+I maintain **Local Time Tracker**, an open-source Python app for Windows with
+local activity storage and offline reports. **v1.2.0 is available.**
+
+Looking for help? Choose one:
+
+- Python starter task — CLI version flags:
+  https://github.com/HafidIdrissi/Time-Tracker/issues/86
+- Python starter task — clearer demo-data errors:
+  https://github.com/HafidIdrissi/Time-Tracker/issues/87
+- Real Windows testing of upcoming PRs:
+  https://github.com/HafidIdrissi/Time-Tracker/issues/88
+
+Comment on the issue with what you would like to work on. For code tasks, wait
+for the maintainer to confirm your plan. Source and download:
+https://github.com/HafidIdrissi/Time-Tracker
+
+### 45-second demo recording plan
+
+Use a disposable Windows environment and harmless fictional window titles.
+Record the released app for the product demo. Test pending PRs separately, with
+their exact commit identified. This is a script for a recording, not a recorded
+video or a claim that the manual checks are complete.
+
+| Time | Shot | English narration or caption |
+| --- | --- | --- |
+| 0–8 s | Open the app; show the Running status. | "See where your Windows time goes, with activity stored on your computer." |
+| 8–20 s | Switch between a blank Notepad document named fictional-note.txt and another harmless window; show live and recent activity. | "Local Time Tracker records foreground applications, window titles and idle periods automatically." |
+| 20–30 s | Open Usage analysis after collecting a few samples. | "Explore your application use, categories and active time." |
+| 30–38 s | Generate today's report and open it. | "Generate a local HTML report that works offline." |
+| 38–45 s | Show the repository and contribution links. | "v1.2.0 is available. Windows testers and Python contributors are welcome." |
+
+Existing sanitized visuals for a post or an edited slideshow:
+
+- [Dashboard](../assets/dashboard-preview.png)
+- [Usage analysis](../assets/usage-analysis-preview.png)
+- [Offline report](../assets/report-preview.svg)
+- [Social preview](../assets/social-preview-v2.png)
+
+Follow [First run on Windows](FIRST_RUN.md) for the live demonstration.
+The [synthetic database](SYNTHETIC_ACTIVITY.md) has fixed historical dates, so
+its rows will not populate today's dashboard. Use its documented date range if
+you include a synthetic report.
+
+### Where to publish
+
+The messages above are ready to copy. Repository publication does not publish
+them to Reddit, Discord or another social account. Choose the destination first,
+check its current promotion rules, and post in its designated project channel
+or thread. Link the relevant issue and answer questions there.
+
 ## Positioning
 
 ### One-line promise
@@ -48,7 +173,7 @@ copy, and rollout checklist for Local Time Tracker.
       [welcome](https://github.com/HafidIdrissi/Time-Tracker/discussions/1),
       [beta testing](https://github.com/HafidIdrissi/Time-Tracker/discussions/2),
       and [privacy controls](https://github.com/HafidIdrissi/Time-Tracker/discussions/3).
-- [ ] Add sanitized desktop screenshots from a demonstration database.
+- [x] Add sanitized desktop screenshots from a demonstration database.
 - [ ] Sign the installer or publish a clear checksum and scan disclosure.
 
 ## Posting principles
