@@ -10,7 +10,9 @@
 
 > **Contributors welcome!**
 >
-> New to open source? Browse our [good first issues](https://github.com/HafidIdrissi/Time-Tracker/contribute), read the short [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), and comment on the issue you want to work on.
+> Start with [CLI version flags (#86)](https://github.com/HafidIdrissi/Time-Tracker/issues/86) or [clearer demo-data errors (#87)](https://github.com/HafidIdrissi/Time-Tracker/issues/87). Windows users can help [test upcoming desktop changes (#88)](https://github.com/HafidIdrissi/Time-Tracker/issues/88).
+>
+> Read the [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), choose one task, and comment with a short plan. Help spread the word with our [English announcements and demo script](docs/LAUNCH.md#v120-windows-testers-and-python-contributors-wanted).
 
 Local Time Tracker is a free, open-source Windows application that automatically
 measures time spent in applications and browser tabs. Your activity stays in a
