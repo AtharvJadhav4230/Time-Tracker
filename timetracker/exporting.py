@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 
 from .database import ActivityDatabase
@@ -32,6 +34,15 @@ def period_row(period: ActivityPeriod) -> dict[str, object]:
     }
 
 
+def _same_file(left: Path, right: Path) -> bool:
+    if left.resolve() == right.resolve():
+        return True
+    try:
+        return left.exists() and right.exists() and left.samefile(right)
+    except OSError:
+        return False
+
+
 def export_activity(database_path: str | Path, destination: str | Path, file_format: str) -> Path:
     """Write every stored period to ``destination`` without modifying the database."""
 
@@ -39,29 +50,38 @@ def export_activity(database_path: str | Path, destination: str | Path, file_for
     if normalized not in {"csv", "json"}:
         raise ValueError("file_format must be 'csv' or 'json'")
 
-    destination_path = Path(destination)
-    destination_path.parent.mkdir(parents=True, exist_ok=True)
-    partial_path = destination_path.with_name(destination_path.name + ".partial")
-
     source_path = Path(database_path)
+    destination_path = Path(destination)
+    if _same_file(source_path, destination_path):
+        raise ValueError("The export destination must be a different file from the activity database")
+
+    if source_path.is_file():
+        with ActivityDatabase(source_path) as database:
+            rows = [period_row(period) for period in database.all_periods()]
+    else:
+        rows = []
+
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination_path.name}.",
+        suffix=".tmp",
+        dir=destination_path.parent,
+    )
+    os.close(descriptor)
+    temporary_path = Path(temporary_name)
     try:
-        if source_path.is_file():
-            with ActivityDatabase(source_path) as database:
-                rows = [period_row(period) for period in database.all_periods()]
-        else:
-            rows = []
         if normalized == "csv":
-            with partial_path.open("w", encoding="utf-8", newline="") as handle:
+            with temporary_path.open("w", encoding="utf-8", newline="") as handle:
                 writer = csv.DictWriter(handle, fieldnames=EXPORT_FIELDS, quoting=csv.QUOTE_MINIMAL)
                 writer.writeheader()
                 writer.writerows(rows)
         else:
-            partial_path.write_text(
+            temporary_path.write_text(
                 json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
-        partial_path.replace(destination_path)
+        temporary_path.replace(destination_path)
     except BaseException:
-        partial_path.unlink(missing_ok=True)
+        temporary_path.unlink(missing_ok=True)
         raise
     return destination_path

@@ -77,6 +77,26 @@ class ExportTests(unittest.TestCase):
             self.assertFalse((blocker / "export.json.partial").exists())
             self.assertFalse((blocker / "export.json").exists())
 
+    def test_destination_cannot_replace_the_source_database(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = self._database(Path(directory))
+            with self.assertRaises(ValueError):
+                export_activity(source, source, "json")
+            with ActivityDatabase(source) as database:
+                rows = database.all_periods()
+            self.assertEqual(rows[0].application, "notes.exe")
+            self.assertTrue(source.read_bytes().startswith(b"SQLite format 3"))
+
+    def test_existing_partial_sibling_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self._database(root)
+            sibling = root / "out.json.partial"
+            sibling.write_text("keep this sibling", encoding="utf-8")
+            export_activity(source, root / "out.json", "json")
+            self.assertEqual(sibling.read_text(encoding="utf-8"), "keep this sibling")
+            self.assertTrue((root / "out.json").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
