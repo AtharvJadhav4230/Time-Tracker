@@ -71,7 +71,7 @@ In PowerShell, from the folder that contains both files:
 
 ```powershell
 # Example file name pattern for the latest release (replace <version> with the
-# version shown on the Releases page, e.g. 1.1.0):
+# version shown on the Releases page, e.g. 1.2.0):
 #   LocalTimeTracker-Setup-<version>-x64.exe
 #   SHA256SUMS.txt
 
@@ -309,7 +309,7 @@ Build the Windows application:
 Build a tested installer:
 
 ```powershell
-.\build_release.ps1 -Version 1.1.0
+.\build_release.ps1 -Version 1.2.0
 ```
 
 This produces the installer and checksum under `release\`. Pull requests and
@@ -317,7 +317,7 @@ changes to `main` run `.github/workflows/tests.yml` on Windows Python 3.11,
 Windows Python 3.13, and Ubuntu Python 3.12. The Ubuntu job runs the existing
 core tests only. Sampling, the desktop window, and the installed tracker remain
 Windows-only. Pushing a semantic version
-tag such as `v1.1.0` starts `.github/workflows/release.yml`, which tests the
+tag such as `v1.2.0` starts `.github/workflows/release.yml`, which tests the
 project, builds the installer, and publishes the GitHub release.
 
 Never reuse or move a published version tag. If a released version changes,
@@ -353,6 +353,11 @@ are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the fork-first setup,
 then the [architecture guide](docs/ARCHITECTURE.md), and browse the
 [roadmap](ROADMAP.md), or start with a
 [`good first issue`](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+New contributors can help with [CLI version flags](https://github.com/HafidIdrissi/Time-Tracker/issues/86),
+[synthetic-data error messages](https://github.com/HafidIdrissi/Time-Tracker/issues/87),
+or [Windows validation](https://github.com/HafidIdrissi/Time-Tracker/issues/88).
+Comment with a short plan before starting and work on one claimed issue.
 
 For usage questions, see [SUPPORT.md](SUPPORT.md). Please follow the
 [Code of Conduct](CODE_OF_CONDUCT.md) in all project spaces.

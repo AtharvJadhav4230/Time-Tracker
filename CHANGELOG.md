@@ -3,6 +3,33 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-03
+
+### Added
+
+- offline category-rule preview command for fictional application/title inputs;
+- reproducible synthetic activity database and dated-report instructions;
+- `--version` for the terminal tracker;
+- first-run and architecture guides and a fork-first contributor setup;
+- expanded tracking, category, database, interval, reporting, analytics, CLI
+  and Windows-provider regression coverage;
+- Windows Python 3.11/3.13 and Ubuntu Python 3.12 CI jobs.
+
+### Changed
+
+- rankings use deterministic duration/name/color tie-breakers, including
+  distinct case-equivalent application names and browser titles;
+- contributor documentation uses the virtual environment executable directly.
+
+### Fixed
+
+- SQLite failures in the report command exit cleanly without a traceback;
+- failed database initialization closes its connection.
+
+### Contributors
+
+- Thanks to @Ymax27 for 19 merged contributions.
+
 ## [1.1.0] - 2026-07-20
 
 ### Changed
