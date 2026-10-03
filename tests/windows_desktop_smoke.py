@@ -97,6 +97,8 @@ class NativeDesktopTests(TestCase):
         self.app.closing = True
         for identifier in self.root.tk.call("after", "info"):
             self.root.after_cancel(identifier)
+        # Flush ttk theme-change idle callbacks before destroying the Tcl app.
+        self.root.update_idletasks()
         self.root.destroy()
         self.assertEqual(self.callbacks, [])
 
