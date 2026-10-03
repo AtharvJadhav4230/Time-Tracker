@@ -8,6 +8,10 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPOSITORY_ROOT))
+
 from timetracker.database import ActivityDatabase
 from timetracker.models import ActivityState
 

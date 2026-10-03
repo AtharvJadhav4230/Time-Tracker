@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
+import sys
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -55,6 +58,24 @@ class DemoDataTests(unittest.TestCase):
             self.assertGreaterEqual(categories, {"Work", "Games", "Entertainment", "Idle"})
             with self.assertRaises(FileExistsError):
                 generator.generate_demo_database(root / "one")
+
+    def test_documented_command_imports_the_project(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        script = repository / "scripts" / "generate_demo_data.py"
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "demo"
+            environment = os.environ.copy()
+            environment.pop("PYTHONPATH", None)
+            completed = subprocess.run(
+                [sys.executable, str(script), "--output", str(output)],
+                cwd=repository,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertTrue((output / "activity.db").is_file())
 
 
 if __name__ == "__main__":
