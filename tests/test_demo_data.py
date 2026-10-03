@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import os
+import sqlite3
 import subprocess
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import tempfile
+from unittest import mock
 
 from timetracker.categories import load_categorizer
 from timetracker.database import ActivityDatabase
@@ -76,6 +79,45 @@ class DemoDataTests(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertTrue((output / "activity.db").is_file())
+
+    def test_output_path_beneath_file_exits_nonzero_without_traceback(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        script = repository / "scripts" / "generate_demo_data.py"
+        with tempfile.TemporaryDirectory() as directory:
+            dummy_file = Path(directory) / "existing_file"
+            dummy_file.write_text("not a directory", encoding="utf-8")
+            output = dummy_file / "nested_dir"
+            completed = subprocess.run(
+                [sys.executable, str(script), "--output", str(output)],
+                cwd=repository,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 1)
+            self.assertIn("Error:", completed.stderr)
+            self.assertNotIn("Traceback", completed.stderr)
+            self.assertEqual(dummy_file.read_text(encoding="utf-8"), "not a directory")
+
+    def test_sqlite_failure_exits_nonzero_without_traceback(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "demo"
+            existing_file = Path(directory) / "existing.txt"
+            existing_file.write_text("keep this intact", encoding="utf-8")
+            stderr = io.StringIO()
+            with (
+                mock.patch("timetracker.database.ActivityDatabase._create_schema", side_effect=sqlite3.OperationalError("disk I/O error")),
+                mock.patch("sys.stderr", stderr),
+            ):
+                code = generator.main(["--output", str(output)])
+
+            self.assertEqual(code, 1)
+            message = stderr.getvalue()
+            self.assertIn("Error:", message)
+            self.assertIn("disk I/O error", message)
+            self.assertNotIn("Traceback", message)
+            self.assertEqual(existing_file.read_text(encoding="utf-8"), "keep this intact")
 
 
 if __name__ == "__main__":
