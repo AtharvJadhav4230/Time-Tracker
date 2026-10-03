@@ -11,13 +11,16 @@ import threading
 from datetime import date, datetime, timedelta
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from timetracker import __version__
-from timetracker.analytics import UsageAnalytics, analyze_usage
+from timetracker.analytics import UsageAnalytics, analyze_usage, usage_analysis_range
+from timetracker.backup import backup_activity_database as copy_activity_database
 from timetracker.categories import CategoryConfigError, load_categorizer
 from timetracker.database import ActivityDatabase
+from timetracker.exporting import export_activity
 from timetracker.models import ActivityPeriod, ActivitySnapshot
+from timetracker.preferences import load_tracking_preferences, save_tracking_preferences
 from timetracker.reporting import (
     collect_periods,
     format_duration,
@@ -45,11 +48,26 @@ def bundled_resource(name: str) -> Path:
     return application_directory() / name
 
 
+PORTABLE_MARKER = "portable.mode"
+
+
+def is_portable_mode() -> bool:
+    """Return whether the packaged application explicitly requests portable mode."""
+
+    if not getattr(sys, "frozen", False):
+        return False
+    return (application_directory() / PORTABLE_MARKER).is_file()
+
+
 def storage_directory() -> Path:
-    """Choose a writable data folder that survives rebuilding the executable."""
+    """Choose the writable data folder for the current application mode."""
 
     executable_directory = application_directory()
+
     if not getattr(sys, "frozen", False):
+        return executable_directory
+
+    if is_portable_mode():
         return executable_directory
 
     project_candidate = executable_directory.parent.parent
@@ -110,6 +128,7 @@ class TimeTrackerApp:
         self.running_idle_threshold = 180.0
         self.running_poll_interval = 1.0
         self.analysis_data: UsageAnalytics | None = None
+        self.analysis_error = False
         self.current_signature: tuple[str, str] | None = None
         self.current_since: datetime | None = None
         self.tracking_started_at: datetime | None = None
@@ -126,8 +145,11 @@ class TimeTrackerApp:
         self.tracking_duration_text = tk.StringVar(value="00:00:00")
         self.last_measure_text = tk.StringVar(value="—")
         self.live_idle_text = tk.StringVar(value="0 s")
-        self.poll_interval_text = tk.StringVar(value="1")
-        self.idle_threshold_text = tk.StringVar(value="3")
+        sample_seconds, idle_minutes = load_tracking_preferences(
+            APP_DIRECTORY / "preferences.json"
+        )
+        self.poll_interval_text = tk.StringVar(value=sample_seconds)
+        self.idle_threshold_text = tk.StringVar(value=idle_minutes)
         self.analysis_range = tk.StringVar(value="today")
         self.analysis_period_text = tk.StringVar(value="Today")
         self.analysis_total_text = tk.StringVar(value="0 min")
@@ -280,6 +302,12 @@ class TimeTrackerApp:
             state="readonly",
         )
         self.idle_box.grid(row=1, column=2, sticky="w", pady=(3, 0))
+        self.interval_box.bind(
+            "<<ComboboxSelected>>", self._persist_tracking_preferences, add="+"
+        )
+        self.idle_box.bind(
+            "<<ComboboxSelected>>", self._persist_tracking_preferences, add="+"
+        )
         ttk.Label(settings, text="minute(s)", style="Subtitle.TLabel").grid(
             row=1, column=3, padx=(5, 0), pady=(3, 0)
         )
@@ -289,13 +317,15 @@ class TimeTrackerApp:
         )
 
         notebook = ttk.Notebook(container)
+        self.notebook = notebook
         notebook.pack(fill="both", expand=True)
+        notebook.enable_traversal()
         dashboard = ttk.Frame(notebook, style="App.TFrame", padding=(0, 14, 0, 0))
         analysis_tab = ttk.Frame(notebook, style="App.TFrame", padding=(0, 14, 0, 0))
         reports_tab = ttk.Frame(notebook, style="App.TFrame", padding=(0, 14, 0, 0))
-        notebook.add(dashboard, text="  Dashboard  ")
-        notebook.add(analysis_tab, text="  Usage analysis  ")
-        notebook.add(reports_tab, text="  Reports and data  ")
+        notebook.add(dashboard, text="Dashboard", underline=0)
+        notebook.add(analysis_tab, text="Usage analysis", underline=0)
+        notebook.add(reports_tab, text="Reports and data", underline=0)
 
         current_card = ttk.Frame(dashboard, style="Card.TFrame", padding=(20, 17))
         current_card.pack(fill="x", pady=(0, 14))
@@ -439,6 +469,26 @@ class TimeTrackerApp:
             foreground="#64748b",
             wraplength=900,
         ).pack(anchor="w", pady=(0, 12))
+        ttk.Button(
+            data_card,
+            text="Back up activity database",
+            command=self.backup_activity_database,
+            style="App.TButton",
+        ).pack(anchor="w", pady=(0, 12))
+        export_actions = ttk.Frame(data_card, style="Card.TFrame")
+        export_actions.pack(anchor="w", pady=(0, 12))
+        ttk.Button(
+            export_actions,
+            text="Export CSV",
+            command=lambda: self.export_activity_file("csv"),
+            style="App.TButton",
+        ).pack(side="left")
+        ttk.Button(
+            export_actions,
+            text="Export JSON",
+            command=lambda: self.export_activity_file("json"),
+            style="App.TButton",
+        ).pack(side="left", padx=(10, 0))
         self.reset_data_button = ttk.Button(
             data_card,
             text="Reset all activity history",
@@ -494,6 +544,13 @@ class TimeTrackerApp:
             text="Last 7 days",
             variable=self.analysis_range,
             value="week",
+            command=lambda: self._refresh_analysis(schedule=False),
+        ).pack(side="left", padx=(16, 0))
+        ttk.Radiobutton(
+            selector,
+            text="Previous 7 days",
+            variable=self.analysis_range,
+            value="previous-week",
             command=lambda: self._refresh_analysis(schedule=False),
         ).pack(side="left", padx=(16, 0))
         ttk.Label(
@@ -630,6 +687,19 @@ class TimeTrackerApp:
             self.stop_button.configure(state="disabled")
             self.interval_box.configure(state="readonly")
             self.idle_box.configure(state="readonly")
+
+    def _persist_tracking_preferences(self, _event: object = None) -> None:
+        try:
+            save_tracking_preferences(
+                APP_DIRECTORY / "preferences.json",
+                self.poll_interval_text.get(),
+                self.idle_threshold_text.get(),
+            )
+        except (OSError, ValueError):
+            messagebox.showwarning(
+                "Preferences not saved",
+                "Tracking will continue, but these options may not be remembered next time.",
+            )
 
     def start_tracking(self) -> None:
         if self.tracker_thread and self.tracker_thread.is_alive():
@@ -785,13 +855,24 @@ class TimeTrackerApp:
         if not self.closing:
             self.root.after(2000, self._refresh_summary)
 
+    def _show_analysis_error(self) -> None:
+        """Replace visible analysis with an explicit refresh failure."""
+
+        self.analysis_error = True
+        self.analysis_data = None
+        self.analysis_period_text.set("Analysis unavailable")
+        self.analysis_total_text.set("—")
+        self.analysis_average_text.set("—")
+        self.analysis_longest_text.set("—")
+        self._replace_tree_rows(self.category_tree, [], "Analysis unavailable")
+        self._replace_tree_rows(self.analysis_app_tree, [], "Analysis unavailable")
+        self._replace_tree_rows(self.analysis_tab_tree, [], "Analysis unavailable")
+        self._draw_usage_chart()
+
     def _refresh_analysis(self, schedule: bool = True) -> None:
         try:
-            end_day = date.today()
-            start_day = (
-                end_day - timedelta(days=6)
-                if self.analysis_range.get() == "week"
-                else end_day
+            start_day, end_day = usage_analysis_range(
+                date.today(), self.analysis_range.get()
             )
             self.analysis_period_text.set(
                 end_day.strftime("Today · %Y-%m-%d")
@@ -809,6 +890,7 @@ class TimeTrackerApp:
                     range_end,
                 )
             analytics = analyze_usage(periods, start_day, end_day)
+            self.analysis_error = False
             self.analysis_data = analytics
             self.analysis_total_text.set(format_duration(analytics.active_seconds))
             self.analysis_average_text.set(format_duration(analytics.average_daily_seconds))
@@ -818,7 +900,7 @@ class TimeTrackerApp:
             self._populate_analysis_rankings(analytics)
             self._draw_usage_chart()
         except (CategoryConfigError, OSError, sqlite3.Error, ValueError):
-            self.analysis_data = None
+            self._show_analysis_error()
         if schedule and not self.closing:
             self.root.after(5000, self._refresh_analysis)
 
@@ -891,12 +973,16 @@ class TimeTrackerApp:
         canvas = self.usage_canvas
         canvas.delete("all")
         analytics = self.analysis_data
-        if analytics is None or not analytics.buckets:
+        if self.analysis_error or analytics is None or not analytics.buckets:
             canvas.create_text(
                 12,
                 80,
                 anchor="w",
-                text="No activity during this period",
+                text=(
+                    "Usage analysis could not be refreshed."
+                    if self.analysis_error
+                    else "No activity during this period"
+                ),
                 fill="#94a3b8",
                 font=("Segoe UI", 10),
             )
@@ -971,25 +1057,111 @@ class TimeTrackerApp:
                     font=("Segoe UI", 8),
                 )
 
+    def _recent_period_values(self, period: ActivityPeriod) -> tuple[str, str, str, str, str]:
+        return (
+            period.started_at.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "Idle" if period.is_idle else period.application,
+            (
+                "No keyboard or mouse activity"
+                if period.is_idle
+                else period.window_title
+            ),
+            format_clock(period.duration_seconds),
+            "Idle" if period.is_idle else "Active",
+        )
+
     def _show_recent_periods(self, periods: list[ActivityPeriod]) -> None:
-        for item in self.recent_tree.get_children():
-            self.recent_tree.delete(item)
-        for period in periods:
-            self.recent_tree.insert(
-                "",
-                "end",
-                values=(
-                    period.started_at.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
-                    "Idle" if period.is_idle else period.application,
-                    (
-                        "No keyboard or mouse activity"
-                        if period.is_idle
-                        else period.window_title
-                    ),
-                    format_clock(period.duration_seconds),
-                    "Idle" if period.is_idle else "Active",
-                ),
+        tree = self.recent_tree
+        selected = tree.selection()
+        selected_id = selected[0] if selected else ""
+        focused_id = tree.focus()
+        previous_offset = tree.yview()[0]
+        was_at_top = not tree.get_children() or previous_offset <= 0.001
+        incoming = {str(period.id) for period in periods}
+
+        for item in list(tree.get_children()):
+            if item not in incoming:
+                tree.delete(item)
+
+        for index, period in enumerate(periods):
+            iid = str(period.id)
+            values = self._recent_period_values(period)
+            if tree.exists(iid):
+                tree.item(iid, values=values)
+                tree.move(iid, "", index)
+            else:
+                tree.insert("", index, iid=iid, values=values)
+
+        if selected_id and tree.exists(selected_id):
+            tree.selection_set(selected_id)
+        else:
+            current = tree.selection()
+            if current:
+                tree.selection_remove(*current)
+
+        if focused_id and tree.exists(focused_id):
+            tree.focus(focused_id)
+
+        if was_at_top:
+            tree.yview_moveto(0)
+        elif selected_id and tree.exists(selected_id):
+            tree.see(selected_id)
+        else:
+            tree.yview_moveto(previous_offset)
+
+    def export_activity_file(self, file_format: str) -> None:
+        extension = ".csv" if file_format == "csv" else ".json"
+        destination = filedialog.asksaveasfilename(
+            title=f"Export activity as {file_format.upper()}",
+            defaultextension=extension,
+            filetypes=[(file_format.upper(), f"*{extension}")],
+        )
+        if not destination:
+            return
+        try:
+            export_activity(DATABASE_PATH, destination, file_format)
+        except (OSError, sqlite3.Error, ValueError):
+            messagebox.showerror(
+                "Unable to export",
+                "The activity export could not be written. The database was not changed.",
             )
+            return
+        messagebox.showinfo(
+            "Export created",
+            "Activity was written to the selected file. Window titles in that file can be sensitive.",
+        )
+
+    def backup_activity_database(self) -> None:
+        destination = filedialog.asksaveasfilename(
+            title="Back up activity database",
+            defaultextension=".db",
+            filetypes=[("SQLite database", "*.db")],
+        )
+        if not destination:
+            return
+        destination_path = Path(destination)
+        if destination_path.exists():
+            confirmed = messagebox.askyesno(
+                "Replace existing file",
+                "A file already exists at this location. Replace it with the backup?",
+                icon="warning",
+            )
+            if not confirmed:
+                return
+        try:
+            copy_activity_database(DATABASE_PATH, destination_path)
+        except (OSError, sqlite3.Error, ValueError):
+            messagebox.showerror(
+                "Unable to back up",
+                "The activity database could not be copied. No backup file was kept.",
+            )
+            return
+        messagebox.showinfo(
+            "Backup created",
+            "A copy of the activity database was written to the selected file. "
+            "It can contain sensitive window titles and does not include HTML reports "
+            "or category configuration.",
+        )
 
     def reset_activity(self) -> None:
         confirmed = messagebox.askyesno(
@@ -1042,6 +1214,7 @@ class TimeTrackerApp:
         self.period_count_text.set("0")
         self._show_recent_periods([])
         self.analysis_data = None
+        self.analysis_error = False
         self.analysis_total_text.set("0 min")
         self.analysis_average_text.set("0 min")
         self.analysis_longest_text.set("0 min")
@@ -1094,8 +1267,8 @@ class TimeTrackerApp:
             self.messages.put(("report_error", str(exc)))
 
     def open_reports_directory(self) -> None:
-        REPORTS_DIRECTORY.mkdir(parents=True, exist_ok=True)
         try:
+            REPORTS_DIRECTORY.mkdir(parents=True, exist_ok=True)
             os.startfile(str(REPORTS_DIRECTORY))
         except OSError as exc:
             messagebox.showerror("Unable to open", str(exc))
