@@ -64,7 +64,7 @@ def load_categorizer(path: str | Path) -> Categorizer:
 
     config_path = Path(path)
     try:
-        raw = json.loads(config_path.read_text(encoding="utf-8"))
+        raw = json.loads(config_path.read_text(encoding="utf-8-sig"))
     except FileNotFoundError as exc:
         raise CategoryConfigError(f"Configuration not found: {config_path}") from exc
     except json.JSONDecodeError as exc:
