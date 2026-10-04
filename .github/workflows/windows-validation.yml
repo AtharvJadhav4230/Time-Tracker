@@ -62,7 +62,16 @@ jobs:
       - name: Validate release invocations, packages and checksums
         working-directory: "checkout with spaces"
         shell: pwsh
-        run: .\tests\windows_release_smoke.ps1
+        run: |
+          # Exercise the documented local command without Actions-only variables.
+          $taskRunnerTemp = $env:RUNNER_TEMP
+          try {
+            Remove-Item Env:RUNNER_TEMP -ErrorAction SilentlyContinue
+            .\tests\windows_release_smoke.ps1
+          }
+          finally {
+            $env:RUNNER_TEMP = $taskRunnerTemp
+          }
       - name: Keep validated build artifacts
         uses: actions/upload-artifact@v4
         with:

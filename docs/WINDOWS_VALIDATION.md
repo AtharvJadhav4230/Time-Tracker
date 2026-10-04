@@ -39,6 +39,10 @@ Create the README's `.venv` and install PyInstaller and Inno Setup, then run:
 .\tests\windows_release_smoke.ps1
 ```
 
+The script uses the system temporary directory when Actions' RUNNER_TEMP is
+absent. CI explicitly unsets that variable to exercise the documented local
+command.
+
 The script rejects a mismatched version from both the checkout and an outside
 directory with spaces. It then builds the actual installer and portable ZIP
 from both locations and verifies caller-directory restoration, required ZIP
