@@ -1,0 +1,48 @@
+name: Record fictional Windows demo
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/record_windows_demo.py"
+      - ".github/workflows/record-demo.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/record_windows_demo.py"
+      - ".github/workflows/record-demo.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - name: Install FFmpeg
+        shell: pwsh
+        run: choco install ffmpeg --no-progress -y
+      - name: Record only the fictional app window
+        run: python scripts/record_windows_demo.py --output demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fictional-windows-demo
+          path: |
+            demo/LocalTimeTracker-demo.mp4
+            demo/LocalTimeTracker-demo.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Keep recorder diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-recorder-diagnostics
+          path: demo/recording.log
+          if-no-files-found: ignore
+          retention-days: 3
