@@ -108,8 +108,6 @@ class WindowsProviderTests(unittest.TestCase):
         self.assertEqual(snapshot.idle_seconds, 4)
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 WINDOWS_DEPENDENCIES = ("psutil", "win32api", "win32gui", "win32process")
 
@@ -167,3 +165,6 @@ class WindowsProviderStartupTests(unittest.TestCase):
         self.assertIn("Windows dependencies are missing", message)
         self.assertIn("pip install -r requirements.txt", message)
         self.assertIs(ctx.exception.__cause__, original)
+
+if __name__ == "__main__":
+    unittest.main()        
