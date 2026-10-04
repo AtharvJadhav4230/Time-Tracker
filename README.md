@@ -73,7 +73,7 @@ In PowerShell, from the folder that contains both files:
 
 ```powershell
 # Example file name pattern for the latest release (replace <version> with the
-# version shown on the Releases page, e.g. 1.2.0):
+# version shown on the Releases page, e.g. 1.3.0):
 #   LocalTimeTracker-Setup-<version>-x64.exe
 #   SHA256SUMS.txt
 
@@ -365,16 +365,16 @@ Build the Windows application:
 Build a tested installer:
 
 ```powershell
-.\build_release.ps1 -Version 1.2.0
+.\build_release.ps1 -Version 1.3.0
 ```
 
-This produces the installer and checksum under `release\`. Pull requests and
+This produces the installer, portable ZIP and both checksums under `release\`. Pull requests and
 changes to `main` run `.github/workflows/tests.yml` on Windows Python 3.11,
 Windows Python 3.13, and Ubuntu Python 3.12. The Ubuntu job runs the existing
 core tests only. Sampling, the desktop window, and the installed tracker remain
 Windows-only. Pushing a semantic version
-tag such as `v1.2.0` starts `.github/workflows/release.yml`, which tests the
-project, builds the installer, and publishes the GitHub release.
+tag such as `v1.3.0` starts `.github/workflows/release.yml`, which tests the
+project, builds the installer and portable ZIP, and publishes the GitHub release.
 
 Never reuse or move a published version tag. If a released version changes,
 increment the version and create a new tag.

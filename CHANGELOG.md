@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-04
+
+### Added
+
+- local CSV/JSON activity exports and safe SQLite backups while tracking;
+- Previous 7 days analysis, saved sampling/idle preferences and keyboard tab traversal;
+- portable Windows ZIP alongside the installer, with separate SHA-256 entries;
+- native Tk validation with fictional activity and real Windows package checks.
+
+### Fixed
+
+- failed analysis clears stale cards, rankings and chart, then recovers;
+- recent activity retains selection, item focus and scrolling during refresh;
+- reports-folder creation failures show a handled error;
+- synthetic database generation reports expected filesystem/SQLite failures cleanly;
+- release builds work from other directories and restore the caller's location;
+- portable staging follows application signing and executable version metadata matches source;
+- Reset clears the analysis failure state.
+
+### Contributors
+
+- Thanks to @Ymax27 for eight further desktop and release contributions.
+- Thanks to @Juhita2005 for the portable build.
+- Thanks to @Fire162 for concise synthetic-data generator errors.
+
 ## [1.2.0] - 2026-10-03
 
 ### Added
