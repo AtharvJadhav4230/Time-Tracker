@@ -6,7 +6,8 @@ $ProjectDirectory = (Resolve-Path -LiteralPath $ProjectDirectory).Path
 $builder = Join-Path $ProjectDirectory "build_release.ps1"
 $python = Join-Path $ProjectDirectory ".venv\Scripts\python.exe"
 $originalLocation = (Get-Location).Path
-$outside = Join-Path $env:RUNNER_TEMP ("release caller with spaces " + [guid]::NewGuid())
+$taskTemporaryRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [System.IO.Path]::GetTempPath() }
+$outside = Join-Path $taskTemporaryRoot ("release caller with spaces " + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $outside | Out-Null
 
 function Assert-True {
