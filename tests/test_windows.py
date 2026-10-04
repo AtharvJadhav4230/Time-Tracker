@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import unittest
+import builtins
+import sys
+from unittest import mock
+
 
 from timetracker.windows import WindowsActivityProvider
-
 
 class FakeApi:
     def __init__(self, last_input: int, tick: int) -> None:
@@ -105,5 +108,63 @@ class WindowsProviderTests(unittest.TestCase):
         self.assertEqual(snapshot.idle_seconds, 4)
 
 
+
+WINDOWS_DEPENDENCIES = ("psutil", "win32api", "win32gui", "win32process")
+
+
+def selective_import(failing=None, error=None, attempted=None):
+    """Return an __import__ replacement that delegates to the real import.
+
+    Records imports of the Windows dependencies in `attempted` and raises
+    `error` when `failing` is imported. All other imports behave normally.
+    """
+    real_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        top_level = name.split(".")[0]
+        if level == 0 and top_level in WINDOWS_DEPENDENCIES:
+            if attempted is not None:
+                attempted.append(top_level)
+            if top_level == failing:
+                raise error
+        return real_import(name, globals, locals, fromlist, level)
+
+    return fake_import
+
+
+class WindowsProviderStartupTests(unittest.TestCase):
+    def test_unsupported_platform_fails_before_dependency_imports(self):
+        attempted = []
+        with mock.patch.object(sys, "platform", "linux"), mock.patch(
+            "builtins.__import__", new=selective_import(attempted=attempted)
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                WindowsActivityProvider()
+
+        self.assertEqual(
+            str(ctx.exception), "Activity tracking is available on Windows only."
+        )
+        self.assertEqual(attempted, [])
+
+    def test_missing_dependency_reports_install_guidance_and_chains_cause(self):
+        original = ImportError("No module named 'win32gui'", name="win32gui")
+        harmless = {
+            name: mock.MagicMock()
+            for name in ("psutil", "win32api", "win32process")
+        }
+        with mock.patch.object(sys, "platform", "win32"), mock.patch.dict(
+            sys.modules, harmless
+        ), mock.patch(
+            "builtins.__import__",
+            new=selective_import(failing="win32gui", error=original),
+        ):
+            with self.assertRaises(RuntimeError) as ctx:
+                WindowsActivityProvider()
+
+        message = str(ctx.exception)
+        self.assertIn("Windows dependencies are missing", message)
+        self.assertIn("pip install -r requirements.txt", message)
+        self.assertIs(ctx.exception.__cause__, original)
+
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main()        
