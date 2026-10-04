@@ -1,0 +1,116 @@
+name: Publish v1.3.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.3.0.yml"
+      - "timetracker/__init__.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-v1.3.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Require source CI on this exact main commit
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $required = @("Tests", "Windows validation", "Record fictional Windows demo")
+          $deadline = (Get-Date).AddMinutes(15)
+          $ready = $false
+          while ((Get-Date) -lt $deadline) {
+            $response = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs?head_sha=$env:GITHUB_SHA&event=push&per_page=50"
+            if ($LASTEXITCODE -ne 0) { throw "Unable to inspect source CI." }
+            $runs = ($response | ConvertFrom-Json).workflow_runs
+            $ready = $true
+            foreach ($name in $required) {
+              $run = $runs | Where-Object { $_.name -eq $name -and $_.head_sha -eq $env:GITHUB_SHA } | Select-Object -First 1
+              if (-not $run -or $run.status -ne "completed") { $ready = $false; continue }
+              if ($run.conclusion -ne "success") { throw "$name failed on this source commit." }
+              if ($name -eq "Record fictional Windows demo") { $demoRun = $run.id }
+            }
+            if ($ready) { break }
+            Start-Sleep -Seconds 5
+          }
+          if (-not $ready) { throw "Source CI did not complete successfully before the deadline." }
+          "DEMO_RUN_ID=$demoRun" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Prepare build tools
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt "pyinstaller>=6,<7"
+          if ($LASTEXITCODE -ne 0) { throw "Build dependencies failed." }
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup installation failed." }
+      - name: Build this version
+        shell: pwsh
+        run: |
+          .\build_release.ps1 -Version "1.3.0"
+      - name: Retrieve the verified demo from this commit
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:DEMO_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.head_sha -ne $env:GITHUB_SHA -or $run.conclusion -ne "success") {
+            throw "Demo source does not match this release."
+          }
+          gh run download $env:DEMO_RUN_ID --name fictional-windows-demo --dir demo
+          if ($LASTEXITCODE -ne 0) { throw "Unable to retrieve validated demo." }
+      - name: Create, verify and publish a new release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = "v1.3.0"
+          gh release view $tag --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release already exists; never overwrite a published version." }
+          gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag" *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Tag already exists; never reuse or move a version tag." }
+          $assets = @(
+            "release/LocalTimeTracker-Setup-1.3.0-x64.exe",
+            "release/LocalTimeTracker-1.3.0-portable-x64.zip",
+            "release/SHA256SUMS.txt",
+            "demo/LocalTimeTracker-demo.mp4",
+            "demo/LocalTimeTracker-demo.txt"
+          )
+          foreach ($asset in $assets) {
+            if (-not (Test-Path -LiteralPath $asset) -or (Get-Item -LiteralPath $asset).Length -eq 0) {
+              throw "Missing or empty release asset: $asset"
+            }
+          }
+          gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$tag" -f "sha=$env:GITHUB_SHA" | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "New release tag creation failed." }
+          gh release create $tag @assets --verify-tag --draft --title "Local Time Tracker v1.3.0" --notes-file docs/releases/v1.3.0.md
+          if ($LASTEXITCODE -ne 0) { throw "Draft release creation failed." }
+          $ref = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $ref.object.sha -ne $env:GITHUB_SHA) { throw "Release tag does not point to this exact commit." }
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $release.draft -or $release.assets.Count -ne $assets.Count) {
+            throw "Draft release asset verification failed."
+          }
+          foreach ($asset in $assets) {
+            $local = Get-Item -LiteralPath $asset
+            $remote = $release.assets | Where-Object { $_.name -eq $local.Name }
+            if (-not $remote -or $remote.size -ne $local.Length) { throw "Uploaded asset size mismatch: $asset" }
+          }
+          gh release edit $tag --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw "Release publication failed." }
