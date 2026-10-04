@@ -12,7 +12,9 @@
 >
 > Choose an open, unassigned [good first issue](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22) for documentation, report accessibility or focused Python work. Browse [help wanted tasks](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22help%20wanted%22) for desktop, analytics, exports and Windows packaging improvements.
 >
-> Read the [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), choose one task, and comment with a short plan before starting. Starter examples: [portable documentation](https://github.com/HafidIdrissi/Time-Tracker/issues/98), [report table accessibility](https://github.com/HafidIdrissi/Time-Tracker/issues/108), [CLI validation](https://github.com/HafidIdrissi/Time-Tracker/issues/122) and [shared desktop timing choices](https://github.com/HafidIdrissi/Time-Tracker/issues/134).
+> **New to open source?** Find a task by skill in [Choose your first contribution](#choose-your-first-contribution). Python core work can be developed without a Windows desktop; native UI and live-tracking checks require Windows.
+>
+> Read the [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), choose one task, and comment with a short plan before starting.
 
 Local Time Tracker is a free, open-source Windows application that automatically
 measures time spent in applications and browser tabs. Your activity stays in a
@@ -412,6 +414,31 @@ then the [architecture guide](docs/ARCHITECTURE.md), and browse the
 
 Choose an [open, unassigned starter task](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22) or browse the wider [help wanted backlog](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22help%20wanted%22). Each issue includes starting files, acceptance criteria and validation guidance.
 Comment with a short plan before starting and work on one claimed issue.
+
+### Choose your first contribution
+
+You do not need to tackle a large feature. Start with one focused task that
+matches your skills:
+
+| Your interests | Starting point | Environment |
+| --- | --- | --- |
+| Writing and onboarding | [Open documentation tasks](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3Adocumentation%20label%3A%22good%20first%20issue%22) | Read and preview Markdown; verify any documented commands on their target platform |
+| Python and unit tests | [Category validation coverage](https://github.com/HafidIdrissi/Time-Tracker/issues/200) or [export format validation](https://github.com/HafidIdrissi/Time-Tracker/issues/202) | Python core; Windows or a configured non-Windows development environment |
+| HTML and accessibility | [Report table captions and scopes](https://github.com/HafidIdrissi/Time-Tracker/issues/108) | Python to generate fictional reports; browser and accessibility checks |
+| GitHub Actions | [Bound the core test job](https://github.com/HafidIdrissi/Time-Tracker/issues/203) | Workflow YAML and CI run evidence |
+| Windows testing | [Display scaling checks](https://github.com/HafidIdrissi/Time-Tracker/issues/171) | A real Windows desktop with disposable data |
+
+Issue links are examples, not reservations. Check the current assignee,
+comments and linked pull requests before choosing one. The [live starter
+list](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22)
+filters for open, unassigned issues; a maintainer may also have confirmed a
+claim in the discussion.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md), comment with your approach and wait for
+scope confirmation. For a code change, run focused tests and the full suite;
+for documentation, report the walkthrough you actually performed. The
+[architecture guide](docs/ARCHITECTURE.md) and
+[fictional data guide](docs/SYNTHETIC_ACTIVITY.md) help you explore safely.
 
 For usage questions, see [SUPPORT.md](SUPPORT.md). Please follow the
 [Code of Conduct](CODE_OF_CONDUCT.md) in all project spaces.
