@@ -10,9 +10,9 @@
 
 > **Contributors welcome!**
 >
-> Start with [CLI version flags (#86)](https://github.com/HafidIdrissi/Time-Tracker/issues/86) or [clearer demo-data errors (#87)](https://github.com/HafidIdrissi/Time-Tracker/issues/87). Windows users can help [test upcoming desktop changes (#88)](https://github.com/HafidIdrissi/Time-Tracker/issues/88).
+> Choose an open, unassigned [good first issue](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22) for documentation, report accessibility or focused Python work. Browse [help wanted tasks](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22help%20wanted%22) for desktop, analytics, exports and Windows packaging improvements.
 >
-> Read the [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), choose one task, and comment with a short plan. Help spread the word with our [English announcements and demo script](docs/LAUNCH.md#v120-windows-testers-and-python-contributors-wanted).
+> Read the [claiming process](CONTRIBUTING.md#find-and-claim-an-issue), choose one task, and comment with a short plan before starting. Starter examples: [portable documentation](https://github.com/HafidIdrissi/Time-Tracker/issues/98), [report table accessibility](https://github.com/HafidIdrissi/Time-Tracker/issues/108), [CLI validation](https://github.com/HafidIdrissi/Time-Tracker/issues/122) and [shared desktop timing choices](https://github.com/HafidIdrissi/Time-Tracker/issues/134).
 
 Local Time Tracker is a free, open-source Windows application that automatically
 measures time spent in applications and browser tabs. Your activity stays in a
@@ -410,9 +410,7 @@ then the [architecture guide](docs/ARCHITECTURE.md), and browse the
 [roadmap](ROADMAP.md), or start with a
 [`good first issue`](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
-New contributors can help with [CLI version flags](https://github.com/HafidIdrissi/Time-Tracker/issues/86),
-[synthetic-data error messages](https://github.com/HafidIdrissi/Time-Tracker/issues/87),
-or [Windows validation](https://github.com/HafidIdrissi/Time-Tracker/issues/88).
+Choose an [open, unassigned starter task](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22) or browse the wider [help wanted backlog](https://github.com/HafidIdrissi/Time-Tracker/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee%20label%3A%22help%20wanted%22). Each issue includes starting files, acceptance criteria and validation guidance.
 Comment with a short plan before starting and work on one claimed issue.
 
 For usage questions, see [SUPPORT.md](SUPPORT.md). Please follow the
