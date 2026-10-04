@@ -1,21 +1,20 @@
-## What changed?
+### Summary
+<!-- Provide a brief description of the changes introduced by this pull request. -->
 
-Describe the focused change and why it is needed.
+Closes #199
 
-## User impact
+### Validation Evidence
+<!-- Fill out the table below detailing author-run checks. CI runs do not replace local validation. -->
+<!-- For documentation-only changes, mention 'N/A - Doc change' and describe your manual walkthrough. -->
 
-Explain what users will notice, including any privacy, data, or compatibility
-impact.
+| Environment (OS / Python) | Command or Manual Step Run | Actual Result | Reason if Skipped |
+| :--- | :--- | :--- | :--- |
+| e.g., Windows 11 / Python 3.11 | `.\venv\Scripts\python.exe -m unittest discover -v` | All tests passed | |
+| e.g., Ubuntu / Python 3.10 | `./venv/bin/python -m unittest discover -v` | All tests passed | |
+| Documentation walkthrough | Markdown preview & link verification | Formatted cleanly, links valid | |
 
-## Validation
-
-- [ ] `python -m unittest discover -v` passes.
-- [ ] I performed the relevant interface or installer smoke test.
-- [ ] I added or updated tests where practical.
-- [ ] I updated user-facing documentation.
-- [ ] I verified that no personal activity data, report, secret, certificate,
-      or generated database is included.
-
-## Screenshots
-
-Add sanitized screenshots for interface changes. Use demonstration data only.
+### Checklist
+- [ ] Linked issue referenced in the summary
+- [ ] Local validation performed and evidence table filled above
+- [ ] Preserved user privacy (no PII, local secrets, or tracking telemetry introduced)
+- [ ] If changing interface/installer: UI and installation flows manually verified (or marked N/A)
