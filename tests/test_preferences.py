@@ -35,8 +35,16 @@ class PreferenceTests(unittest.TestCase):
             )
             original_bytes = path.read_bytes()
 
-            with patch.object(Path, "read_text", side_effect=PermissionError):
+            with(
+                patch.object(Path, "read_text", side_effect=PermissionError),
+                patch.object(Path, "write_text") as write_text,
+                patch.object(Path, "write_bytes") as write_bytes,
+                patch("timetracker.preferences.os.replace") as replace,
+      ):
                 self.assertEqual(load_tracking_preferences(path), ("1", "3"))
+                write_text.assert_not_called()
+                write_bytes.assert_not_called()
+                replace.assert_not_called()
 
             self.assertEqual(path.read_bytes(), original_bytes)
             self.assertEqual(load_tracking_preferences(path), ("5", "10"))
@@ -48,7 +56,16 @@ class PreferenceTests(unittest.TestCase):
             invalid_bytes = b"\xff\xfe\xfa"
             path.write_bytes(invalid_bytes)
 
-            self.assertEqual(load_tracking_preferences(path), ("1", "3"))
+            with (
+               patch.object(Path, "write_text") as write_text,
+               patch.object(Path, "write_bytes") as write_bytes,
+               patch("timetracker.preferences.os.replace") as replace,
+            ):
+               self.assertEqual(load_tracking_preferences(path), ("1", "3"))
+
+            write_text.assert_not_called()
+            write_bytes.assert_not_called()
+            replace.assert_not_called()
             self.assertEqual(path.read_bytes(), invalid_bytes)
 
             path.write_text(
@@ -57,8 +74,6 @@ class PreferenceTests(unittest.TestCase):
             )
             self.assertEqual(load_tracking_preferences(path), ("5", "10"))
 
-
-if __name__ == "__main__": 
+if __name__ == "__main__":
     unittest.main()
-
 
