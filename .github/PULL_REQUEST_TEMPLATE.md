@@ -6,7 +6,7 @@ Closes #
 ### Validation Evidence
 <!-- Fill out the table below detailing author-run checks. CI runs do not replace local validation. -->
 <!-- Examples:
-Windows: .\venv\Scripts\python.exe -m unittest discover -v
+Windows: .\.venv\Scripts\python.exe -m unittest discover -v
 Ubuntu (core tests only): .venv/bin/python -m unittest discover -v
 Doc changes: Describe manual markdown walkthrough / link checks
 -->
