@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import argparse
 import io
+import os
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from unittest import mock
 
 import report
+from timetracker.database import ActivityDatabase
+from timetracker.models import ActivityState
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReportCliSqliteFailureTests(unittest.TestCase):
@@ -177,6 +184,78 @@ class ReportCliValidationTests(unittest.TestCase):
         self.assertIn("Error:", stderr)
         self.assertNotIn("Traceback", stderr)
         self.assertNotIn("Report generated:", stdout)
+
+
+class ReportCliFilesystemPathTests(unittest.TestCase):
+    """End-to-end guard for paths with spaces and non-ASCII characters.
+
+    Windows user folders routinely contain spaces and accented characters, so
+    every path is passed as a separate argument entry and the CLI runs from an
+    unrelated working directory that must stay untouched.
+    """
+
+    def test_cli_accepts_spaced_unicode_paths_from_a_separate_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture = root / "path with spaces & üñîçødê"
+            fixture.mkdir()
+            database = fixture / "activity dätäbase.db"
+            config = fixture / "cönfig.json"
+            config.write_text(
+                '{"default_category": "Other", "categories": []}\n',
+                encoding="utf-8",
+            )
+            output = root / "output påth" / "räpôrt.html"
+
+            with ActivityDatabase(database) as opened:
+                period = opened.create_period(
+                    ActivityState("Code.exe", "Fictional résumé window"),
+                    datetime(2026, 9, 16, 9, 0, tzinfo=timezone.utc),
+                )
+                opened.update_period(
+                    period,
+                    datetime(2026, 9, 16, 9, 0, tzinfo=timezone.utc),
+                    datetime(2026, 9, 16, 9, 30, tzinfo=timezone.utc),
+                )
+
+            working_directory = root / "separate working directory"
+            working_directory.mkdir()
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPOSITORY_ROOT / "report.py"),
+                    "--database",
+                    str(database),
+                    "--config",
+                    str(config),
+                    "--from",
+                    "2026-09-15",
+                    "--to",
+                    "2026-09-17",
+                    "--output",
+                    str(output),
+                ],
+                cwd=working_directory,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertIn("Report generated:", completed.stdout)
+            self.assertTrue(output.is_file(), f"missing report at {output}")
+            html = output.read_text(encoding="utf-8")
+            self.assertIn('<meta charset="utf-8">', html)
+            self.assertIn("Activity Report", html)
+            self.assertIn("Code.exe", html)
+            self.assertEqual(
+                [entry.name for entry in working_directory.iterdir()],
+                [],
+                "the CLI created unexpected files in the working directory",
+            )
 
 
 if __name__ == "__main__":
