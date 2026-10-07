@@ -67,6 +67,14 @@ class ExportTests(unittest.TestCase):
                 parse_constant=reject_non_finite,
             )
             self.assertEqual(list(payload[0]), list(EXPORT_FIELDS))
+            self.assertEqual(
+                [row["application"] for row in payload],
+                ["notes.exe", "Idle"],
+            )
+            self.assertEqual(
+                [row["duration_seconds"] for row in payload],
+                [300.0, 60.0],
+            )
             self.assertIsInstance(payload[0]["application"], str)
             self.assertIsInstance(payload[0]["window_title"], str)
             self.assertIsInstance(payload[0]["started_at"], str)
@@ -87,6 +95,8 @@ class ExportTests(unittest.TestCase):
                 source_rows = database.all_periods()
             original_destination = "keep existing export"
             destination = root / "out.json"
+            unrelated_sibling = root / ".out.json.keep.tmp"
+            unrelated_sibling.write_bytes(b"keep this unrelated temporary-pattern sibling")
 
             for duration in (float("inf"), float("-inf"), float("nan")):
                 with self.subTest(duration=duration):
@@ -95,6 +105,7 @@ class ExportTests(unittest.TestCase):
                         source_rows[0],
                         duration_seconds=duration,
                     )
+                    temporary_files_before = set(root.glob(".out.json.*.tmp"))
 
                     with mock.patch.object(
                         ActivityDatabase,
@@ -104,11 +115,16 @@ class ExportTests(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError, "finite.*duration_seconds"):
                             export_activity(source, destination, "json")
 
+                    temporary_files_after = set(root.glob(".out.json.*.tmp"))
                     self.assertEqual(
                         destination.read_text(encoding="utf-8"),
                         original_destination,
                     )
-                    self.assertEqual(list(root.glob(".out.json.*.tmp")), [])
+                    self.assertEqual(temporary_files_after, temporary_files_before)
+                    self.assertEqual(
+                        unrelated_sibling.read_bytes(),
+                        b"keep this unrelated temporary-pattern sibling",
+                    )
                     with ActivityDatabase(source) as database:
                         self.assertEqual(database.all_periods(), source_rows)
 
